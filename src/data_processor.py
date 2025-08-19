@@ -1,75 +1,91 @@
 import pandas as pd
+from src import config
 
-def load_and_consolidate_data(file_streams: dict) -> pd.DataFrame:
+def consolidate_data(dataframes):
     """
-    Carrega, consolida e limpa os dados de várias planilhas.
-    Usa arquivos dedicados para as regras de exclusão.
-    
-    Args:
-        file_streams (dict): Dicionário com os streams de bytes dos arquivos.
-                             Ex: {'ativos': BytesIO, 'ferias': BytesIO, ...}
-
-    Returns:
-        pd.DataFrame: Um DataFrame consolidado e limpo.
+    Consolida as bases de dados em um único DataFrame.
+    A base principal é a de ATIVOS, à qual se anexa a de ADMISSÕES.
     """
-    # Carregar as bases de dados
-    df_ativos = pd.read_excel(file_streams['ativos'])
-    df_admitidos = pd.read_excel(file_streams['admitidos'])
-    df_ferias = pd.read_excel(file_streams['ferias'])
-    df_desligados = pd.read_excel(file_streams['desligados'])
-    df_sindicato = pd.read_excel(file_streams['sindicato'])
-
-    # Carregar bases para exclusão
-    df_aprendiz = pd.read_excel(file_streams['aprendiz'])
-    df_estagio = pd.read_excel(file_streams['estagio'])
-    df_exterior = pd.read_excel(file_streams['exterior'])
-    df_afastados = pd.read_excel(file_streams['afastamentos'])
-
-    # --- 1. Consolidação da base principal ---
-    df_main = pd.concat([df_ativos, df_admitidos], ignore_index=True).drop_duplicates(subset=['matricula'])
-
-    # --- 2. Regras de Exclusão (baseado em arquivos) ---
-    # Coleta todas as matrículas que devem ser excluídas
-    matriculas_excluir = set()
-    # Adicione mais colunas de matrícula se os nomes forem diferentes nos arquivos
-    for df_excluir in [df_aprendiz, df_estagio, df_exterior, df_afastados]:
-        if 'matricula' in df_excluir.columns:
-            matriculas_excluir.update(df_excluir['matricula'])
-
-    # Aplica o filtro de exclusão por matrícula
-    df_main = df_main[~df_main['matricula'].isin(matriculas_excluir)]
-
-    # Exclusão adicional por cargo (Diretores), conforme regra original
-    cargos_excluir = ['DIRETOR']
-    df_main = df_main[~df_main['cargo'].str.upper().isin(cargos_excluir)]
-
-    # --- 3. Enriquecimento dos Dados ---
-    # Juntar informações do sindicato para obter o valor do benefício
-    df_main = pd.merge(df_main, df_sindicato, on='sindicato', how='left')
+    print("Iniciando consolidação dos dados...")
     
-    # Juntar informações de desligados para regras de cálculo
-    df_main = pd.merge(df_main, df_desligados[['matricula', 'data_desligamento', 'comunicado_desligamento_ok']], on='matricula', how='left')
+    ativos_df = dataframes.get("ativos", pd.DataFrame()).copy()
+    if ativos_df.empty:
+        print("ERRO: Base de ATIVOS está vazia. Não é possível continuar.")
+        return pd.DataFrame()
 
-    # --- Limpeza e Validação ---
-    # Converter colunas de data para o formato datetime
-    for col in ['data_admissao', 'data_desligamento']:
-        if col in df_main.columns:
-            df_main[col] = pd.to_datetime(df_main[col], errors='coerce')
+    # Remover colunas que começam com "Unnamed"
+    ativos_df = ativos_df.loc[:, ~ativos_df.columns.str.startswith('Unnamed')]
 
-    # --- Regras de Exclusão ---
-    # Remover cargos específicos
-    cargos_excluir = ['DIRETOR', 'ESTAGIARIO', 'APRENDIZ']
-    df_main = df_main[~df_main['cargo'].str.upper().isin(cargos_excluir)]
-
-    # Remover afastados (ex: licença maternidade)
-    # Supondo que haja uma coluna 'status' ou 'afastamento'
-    df_main = df_main[df_main['status'] != 'AFASTADO']
+    admissoes_df = dataframes.get("admissoes", pd.DataFrame()).copy()
+    if not admissoes_df.empty:
+        admissoes_df = admissoes_df.loc[:, ~admissoes_df.columns.str.startswith('Unnamed')]
+        # Garante que as colunas MATRICULA sejam do mesmo tipo para o concat
+        ativos_df[config.MATRICULA_COL] = ativos_df[config.MATRICULA_COL].astype(str)
+        admissoes_df[config.MATRICULA_COL] = admissoes_df[config.MATRICULA_COL].astype(str)
+        
+        base_final = pd.concat([ativos_df, admissoes_df], ignore_index=True)
+    else:
+        base_final = ativos_df
     
-    # Remover quem atua no exterior
-    df_main = df_main[df_main['local_trabalho'] != 'EXTERIOR']
+    # Remove duplicatas, mantendo a primeira ocorrência (caso um admitido já esteja em ativos)
+    base_final.drop_duplicates(subset=[config.MATRICULA_COL], keep='first', inplace=True)
+    
+    print(f"Base consolidada com {len(base_final)} registros únicos.")
+    return base_final
 
-    # Adicionar informações de férias ao DataFrame principal
-    # (Esta lógica pode ser complexa, envolvendo merge e tratamento de datas)
-    # ... Lógica para integrar dados de férias ...
+def apply_exclusions(df, dataframes):
+    """
+    Aplica as regras de exclusão na base de dados consolidada.
+    Remove estagiários, aprendizes, afastados e pessoal do exterior.
+    """
+    if df.empty:
+        return df
 
-    return df_main
+    print("Aplicando regras de exclusão...")
+    
+    matriculas_a_excluir = set()
+    
+    # Lista de dataframes para verificar exclusões
+    dfs_to_exclude = ["estagiarios", "aprendizes", "afastamentos", "exterior"]
+    
+    for name in dfs_to_exclude:
+        df_excluir = dataframes.get(name)
+        if df_excluir is not None and not df_excluir.empty:
+            # Garante que a coluna de matrícula existe
+            if config.MATRICULA_COL in df_excluir.columns:
+                # Limpa valores nulos e converte para string antes de adicionar ao set
+                valid_matriculas = df_excluir[config.MATRICULA_COL].dropna().astype(str).unique()
+                matriculas_a_excluir.update(valid_matriculas)
+            else:
+                print(f"AVISO: Coluna '{config.MATRICULA_COL}' não encontrada no arquivo '{name}'.")
+
+    print(f"Encontradas {len(matriculas_a_excluir)} matrículas únicas para excluir.")
+    
+    # Garante que a coluna de matrícula no DF principal também seja string para comparação
+    df[config.MATRICULA_COL] = df[config.MATRICULA_COL].astype(str)
+    
+    df_filtrado = df[~df[config.MATRICULA_COL].isin(matriculas_a_excluir)]
+    
+    print(f"Base após exclusões com {len(df_filtrado)} registros.")
+    return df_filtrado
+
+def clean_data(df):
+    """
+    Realiza a limpeza e validação dos dados.
+    (Placeholder para lógicas futuras)
+    """
+    print("Iniciando limpeza e validação dos dados...")
+    # Ex: df['Data Admissão'] = pd.to_datetime(df['Data Admissão'], errors='coerce')
+    
+    return df
+
+def process_data(dataframes):
+    """
+    Orquestra o processo de consolidação, exclusão e limpeza.
+    """
+    consolidated_df = consolidate_data(dataframes)
+    excluded_df = apply_exclusions(consolidated_df, dataframes)
+    cleaned_df = clean_data(excluded_df)
+    
+    print("Processamento de dados concluído.")
+    return cleaned_df

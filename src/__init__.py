@@ -1,0 +1,1 @@
+# Este arquivo faz com que a pasta 'src' seja reconhecida como um pacote Python.

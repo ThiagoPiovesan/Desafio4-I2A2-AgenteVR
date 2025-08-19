@@ -1,0 +1,6 @@
+.env
+.python-version
+__pycache__/
+*.xlsx
+*.lock
+desafio4.egg-info/
