@@ -1,6 +1,15 @@
+# Python-generated files
 .env
 .python-version
 __pycache__/
 *.xlsx
 *.lock
 desafio4.egg-info/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
