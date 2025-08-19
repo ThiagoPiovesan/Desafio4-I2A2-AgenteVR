@@ -29,7 +29,7 @@ def generate_report(df):
     # (os nomes podem variar, então fazemos um mapeamento explícito)
     mapping = {
         'Matricula': config.MATRICULA_COL,
-        'Nome Completo': 'NOME_COMPLETO', # Assumindo que este é o nome da coluna no df
+        # 'Nome Completo': 'NOME_COMPLETO', # Assumindo que este é o nome da coluna no df
         'Valor a ser creditado': 'VALOR_TOTAL_VR',
         'Custo empresa': 'CUSTO_EMPRESA',
         'Desconto profissional': 'CUSTO_COLABORADOR'
