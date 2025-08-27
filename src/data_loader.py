@@ -17,6 +17,9 @@ def clean_column_names(df):
         new_col = col_str.strip()
         # Substitui espaços e caracteres não alfanuméricos por _
         new_col = re.sub(r'\\s+', '_', new_col)
+        # Substitui Ã por A
+        new_col = new_col.replace("Ã", "A")
+        # Substitui caracteres não alfanuméricos por _
         new_col = re.sub(r'[^a-zA-Z0-9_]', '_', new_col)
         # Remove múltiplos underscores
         new_col = re.sub(r'_+', '_', new_col)
@@ -58,6 +61,19 @@ def load_all_data():
             dataframes[name] = pd.DataFrame()
             
     return dataframes
+
+def serialize_data_to_markdown(dataframes):
+    """Lê os arquivos Excel e converte os DataFrames para tabelas Markdown."""
+    serialized_data = {}
+    print("Lendo e serializando arquivos de dados...")
+    # Para cada DataFrame, converte para Markdown:
+    for name, df in dataframes.items():
+        if not df.empty:
+            serialized_data[name] = df.to_markdown(index=False)
+            print(f"  - DataFrame '{name}' serializado.")
+        else:
+            serialized_data[name] = "DATAFRAME VAZIO"
+    return serialized_data
 
 if __name__ == '__main__':
     all_data = load_all_data()

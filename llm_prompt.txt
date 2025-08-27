@@ -1,0 +1,88 @@
+
+
+# Tarefa: Calcular Benefício de Vale Refeição (VR)
+
+## Contexto
+Você é um especialista em RH e precisa calcular os valores de VR para os colaboradores de uma empresa. O cálculo envolve várias fontes de dados e regras de negócio complexas. Sua tarefa é analisar todos os dados fornecidos, aplicar as regras rigorosamente e gerar uma tabela final com os valores a serem pagos.
+
+## Dados de Entrada
+Abaixo estão todas as planilhas de dados necessárias, formatadas como tabelas Markdown.
+
+### 1. Ativos
+Esta é a base principal de colaboradores.
+
+### 2. Admissões de Abril
+Novos colaboradores que se juntaram à empresa em Abril.
+
+### 3. Férias
+Colaboradores que tiraram dias de férias no período.
+
+### 4. Desligados
+Colaboradores que foram desligados.
+
+### 5. Afastamentos
+Colaboradores em licença ou outro tipo de afastamento.
+
+### 6. Estagiários
+Lista de matrículas de estagiários.
+
+### 7. Aprendizes
+Lista de matrículas de aprendizes.
+
+### 8. Exterior
+Colaboradores que atuam no exterior.
+
+### 9. Dias Úteis por Sindicato
+A quantidade de dias úteis no período de cálculo (16/04/2025 a 15/05/2025) para cada sindicato.
+
+### 10. Valor do VR por Sindicato (Estado/UF)
+O valor diário do VR para cada estado.
+
+---
+
+## Regras de Negócio a Serem Aplicadas
+
+Você deve seguir ESTAS regras na ordem especificada.
+
+### Passo 1: Base de Colaboradores Elegíveis
+A base de colaboradores elegíveis já foi pré-processada e está disponível no dataframe `funcionarios`.
+Esta base já contém a união dos colaboradores ativos e das novas admissões, e as seguintes exclusões já foram aplicadas:
+- Colaboradores em `Afastamentos`, `Estagiários`, `Aprendizes`, `Exterior`.
+- Colaboradores cujo cargo contém a palavra "DIRETOR".
+
+Sua tarefa começa no Passo 2, utilizando o dataframe `funcionarios` como ponto de partida.
+
+### Passo 2: Calcular os Dias a Pagar para Cada Colaborador
+1.  **Dias Úteis Padrão:** Para cada colaborador, encontre seu sindicato na coluna `Sindicato`. Use a tabela `Dias Úteis por Sindicato` para determinar a quantidade de dias úteis do mês para ele. **Atenção:** Os nomes dos sindicatos podem não ser idênticos. Faça uma correspondência inteligente (ex: "SINDPD SP" na base de ativos deve corresponder a "SINDPD SP - SIND.TRAB.EM PROC DADOS..." na base de dias úteis).
+2.  **Subtrair Férias:** Se o colaborador estiver na tabela `Férias`, subtraia os `DIAS DE FÉRIAS` dos dias úteis padrão. O resultado nunca pode ser menor que zero.
+3.  **Aplicar Regra de Desligamento (Corte):** Se o colaborador estiver na tabela `Desligados` E o `COMUNICADO DE DESLIGAMENTO` for "OK" E o dia da `DATA DEMISSÃO` for **menor ou igual a 15**, então os dias a pagar para este colaborador são **ZERO**.
+4.  **Aplicar Regra de Proporcionalidade (Admissão):** Para colaboradores admitidos no período de cálculo (16/04/2025 a 15/05/2025), os dias a pagar devem ser o número de dias úteis entre a data de admissão e 15/05/2025. Ignore o cálculo de férias para eles.
+5.  **Aplicar Regra de Proporcionalidade (Desligamento):** Para colaboradores desligados APÓS o dia 15, os dias a pagar devem ser o número de dias úteis entre 16/04/2025 e a data de demissão.
+
+### Passo 3: Calcular o Valor Final do VR
+1.  **Encontrar Valor Diário:** Para cada colaborador, extraia a sigla do estado (UF) do nome do seu `Sindicato` (ex: "SINDPPD RS" -> "RS"). Use essa UF para encontrar o `VALOR` diário na tabela `Valor do VR por Sindicato`.
+2.  **Calcular Valor Total:** `Valor Total VR` = (Dias a Pagar Finais) * (Valor Diário do VR).
+3.  **Dividir Custos:**
+    *   `Custo Empresa` = `Valor Total VR` * 0.80 (80%)
+    *   `Desconto Profissional` = `Valor Total VR` * 0.20 (20%)
+
+---
+
+## Tarefa Final
+
+Após aplicar todas as regras, sua tarefa é gerar um DataFrame final.
+
+1.  **Criação do DataFrame:** Crie um novo DataFrame chamado `final_df`.
+2.  **Seleção de Colunas:** Este DataFrame deve conter EXATAMENTE as seguintes colunas, na ordem especificada, a partir dos dados calculados:
+    - `Matricula`
+    - `Admissão`
+    - `Sindicato do Colaborador`
+    - `Competência`
+    - `Dias`
+    - `VALOR DIÁRIO VR`
+    - `TOTAL`
+    - `Custo empresa`
+    - `Desconto profissional`
+    - `OBS GERAL`
+3.  **Retorno:** A última linha do seu código deve ser a variável `final_df`. Isso garantirá que o DataFrame seja retornado como a resposta final. **NÃO** formate a saída como Markdown ou qualquer outro tipo de string. A resposta final deve ser o objeto DataFrame.
+

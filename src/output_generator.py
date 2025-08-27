@@ -2,6 +2,7 @@ import pandas as pd
 import os
 from src import config
 
+# --- CÓDIGO REFERÊNCIA ---
 def generate_report(df):
     """
     Gera a planilha final para a operadora de VR, usando o arquivo

@@ -18,7 +18,7 @@ def consolidate_data(dataframes):
 
     admissoes_df = dataframes.get("admissoes", pd.DataFrame()).copy()
     if not admissoes_df.empty:
-        admissoes_df = admissoes_df.loc[:, ~admissoes_df.columns.str.startswith('Unnamed')]
+        # admissoes_df = admissoes_df.loc[:, ~admissoes_df.columns.str.startswith('Unnamed')]
         # Garante que as colunas MATRICULA sejam do mesmo tipo para o concat
         ativos_df[config.MATRICULA_COL] = ativos_df[config.MATRICULA_COL].astype(str)
         admissoes_df[config.MATRICULA_COL] = admissoes_df[config.MATRICULA_COL].astype(str)
@@ -36,28 +36,44 @@ def consolidate_data(dataframes):
 def apply_exclusions(df, dataframes):
     """
     Aplica as regras de exclusão na base de dados consolidada.
-    Remove estagiários, aprendizes, afastados e pessoal do exterior.
+    Remove diretores, estagiários, aprendizes, afastados e pessoal do exterior.
     """
     if df.empty:
         return df
 
     print("Aplicando regras de exclusão...")
-    
     matriculas_a_excluir = set()
     
     # Lista de dataframes para verificar exclusões
-    dfs_to_exclude = ["estagiarios", "aprendizes", "afastamentos", "exterior"]
+    dfs_to_exclude = ["estagiarios", "aprendizes", "afastamentos", "exterior", 'ativos']
+    
+    # Lista de funcoes para verificar exclusão:
+    funcoes_excluir = ["DIRETOR"] 
     
     for name in dfs_to_exclude:
+        print(f"Verificando exclusões no DataFrame: {name}")
         df_excluir = dataframes.get(name)
-        if df_excluir is not None and not df_excluir.empty:
-            # Garante que a coluna de matrícula existe
-            if config.MATRICULA_COL in df_excluir.columns:
-                # Limpa valores nulos e converte para string antes de adicionar ao set
-                valid_matriculas = df_excluir[config.MATRICULA_COL].dropna().astype(str).unique()
+        if name == 'ativos':
+            # Verifica funções específicas para exclusão
+            # Corrigido: verifica se algum valor da lista está nas colunas
+            mask_cargo = df["TITULO_DO_CARGO"].isin(funcoes_excluir) if "TITULO_DO_CARGO" in df.columns else False
+            mask_titulo = df["CARGO"].isin(funcoes_excluir) if "CARGO" in df.columns else False
+            
+            if (mask_cargo.any() if isinstance(mask_cargo, pd.Series) else mask_cargo) or \
+               (mask_titulo.any() if isinstance(mask_titulo, pd.Series) else mask_titulo):
+                # Filtra apenas os registros que atendem aos critérios de exclusão
+                funcionarios_diretor = df[mask_cargo | mask_titulo] if isinstance(mask_cargo, pd.Series) and isinstance(mask_titulo, pd.Series) else df
+                valid_matriculas = funcionarios_diretor[config.MATRICULA_COL].dropna().astype(str).unique()
                 matriculas_a_excluir.update(valid_matriculas)
-            else:
-                print(f"AVISO: Coluna '{config.MATRICULA_COL}' não encontrada no arquivo '{name}'.")
+        else:
+            if df_excluir is not None and not df_excluir.empty:
+                # Garante que a coluna de matrícula existe
+                if config.MATRICULA_COL in df_excluir.columns:
+                    # Limpa valores nulos e converte para string antes de adicionar ao set
+                    valid_matriculas = df_excluir[config.MATRICULA_COL].dropna().astype(str).unique()
+                    matriculas_a_excluir.update(valid_matriculas)
+                else:
+                    print(f"AVISO: Coluna '{config.MATRICULA_COL}' não encontrada no arquivo '{name}'.")
 
     print(f"Encontradas {len(matriculas_a_excluir)} matrículas únicas para excluir.")
     
@@ -72,7 +88,6 @@ def apply_exclusions(df, dataframes):
 def clean_data(df):
     """
     Realiza a limpeza e validação dos dados.
-    (Placeholder para lógicas futuras)
     """
     print("Iniciando limpeza e validação dos dados...")
     # Ex: df['Data Admissão'] = pd.to_datetime(df['Data Admissão'], errors='coerce')
@@ -87,5 +102,10 @@ def process_data(dataframes):
     excluded_df = apply_exclusions(consolidated_df, dataframes)
     cleaned_df = clean_data(excluded_df)
     
+    # remove dataframes ativos + admissao and add the new one:
+    dataframes.pop("ativos", None)
+    dataframes.pop("admissoes", None)
+    dataframes["funcionarios"] = cleaned_df
+
     print("Processamento de dados concluído.")
-    return cleaned_df
+    return dataframes
