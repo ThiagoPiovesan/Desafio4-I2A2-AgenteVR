@@ -1,15 +1,14 @@
-from src.data_loader import load_all_data, serialize_data_to_markdown
+# ------------------------------------------------------------
+# Code developed by: Thiago Piovesan
+# Created on: 2025-08-17
+# ------------------------------------------------------------
+# Libs:
+from src.data_loader import load_all_data
 from src.data_processor import process_data
 from src.calculation_engine import run_calculations
 from src.output_generator import generate_report
 
-from langchain.agents import Tool
-from langchain.globals import set_debug
-from langchain_core.prompts import PromptTemplate
-from langchain_experimental.tools import PythonAstREPLTool
-from langchain.agents import create_react_agent, AgentExecutor
-from langchain_core.language_models.chat_models import BaseChatModel
-
+# ------------------------------------------------------------
 def main():
     """
     Função principal que orquestra todo o processo de cálculo de VR.

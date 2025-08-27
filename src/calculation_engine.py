@@ -1,11 +1,16 @@
+# ------------------------------------------------------------
+# Code developed by: Thiago Piovesan
+# Created on: 2025-08-17
+# ------------------------------------------------------------
+# Libs:
+import os
 import pandas as pd
-from langchain.agents import Tool, AgentExecutor, create_react_agent
+from dotenv import load_dotenv
+from langchain_openai import ChatOpenAI
 from langchain_core.prompts import PromptTemplate
 from langchain_experimental.tools import PythonAstREPLTool
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_openai import ChatOpenAI
-from dotenv import load_dotenv
-import os
+from langchain.agents import Tool, AgentExecutor, create_react_agent
 
 def run_calculations(processed_dfs: dict, llm_prompt: str) -> pd.DataFrame:
     """

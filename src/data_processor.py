@@ -1,6 +1,12 @@
+# ------------------------------------------------------------
+# Code developed by: Thiago Piovesan
+# Created on: 2025-08-17
+# ------------------------------------------------------------
+# Libs:
 import pandas as pd
 from src import config
 
+# ------------------------------------------------------------
 def consolidate_data(dataframes):
     """
     Consolida as bases de dados em um único DataFrame.

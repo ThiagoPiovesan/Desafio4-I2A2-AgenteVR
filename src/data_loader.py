@@ -1,7 +1,13 @@
+# ------------------------------------------------------------
+# Code developed by: Thiago Piovesan
+# Created on: 2025-08-17
+# ------------------------------------------------------------
+# Libs:
+import re
 import pandas as pd
 from src import config
-import re
 
+# ------------------------------------------------------------
 def clean_column_names(df):
     """
     Limpa e padroniza os nomes das colunas de um DataFrame:

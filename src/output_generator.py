@@ -1,3 +1,8 @@
+# ------------------------------------------------------------
+# Code developed by: Thiago Piovesan
+# Created on: 2025-08-17
+# ------------------------------------------------------------
+# Libs:
 import pandas as pd
 import os
 from src import config
