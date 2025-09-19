@@ -2,19 +2,25 @@
 
 # Caminhos para os arquivos de entrada
 INPUT_DIR = "data/input"
-FILE_PATHS = {
+FILE_PATHS_1 = {
     "admissoes": f"{INPUT_DIR}/ADMISSÃO ABRIL.xlsx",
     "afastamentos": f"{INPUT_DIR}/AFASTAMENTOS.xlsx",
-    "aprendizes": f"{INPUT_DIR}/APRENDIZ.xlsx",
-    "ativos": f"{INPUT_DIR}/ATIVOS.xlsx",
-    "dias_uteis": f"{INPUT_DIR}/Base dias uteis.xlsx",
-    "sindicatos": f"{INPUT_DIR}/Base sindicato x valor.xlsx",
-    "desligados": f"{INPUT_DIR}/DESLIGADOS.xlsx",
     "estagiarios": f"{INPUT_DIR}/ESTÁGIO.xlsx",
-    "exterior": f"{INPUT_DIR}/EXTERIOR.xlsx",
-    "ferias": f"{INPUT_DIR}/FÉRIAS.xlsx",
-    "template_vr": f"{INPUT_DIR}/VR MENSAL 05.2025.xlsx",
+    "aprendizes": f"{INPUT_DIR}/APRENDIZ.xlsx",
 }
+FILE_PATHS_2 = {
+    "ativos": f"{INPUT_DIR}/ATIVOS.xlsx",
+    "ferias": f"{INPUT_DIR}/FÉRIAS.xlsx",
+    "exterior": f"{INPUT_DIR}/EXTERIOR.xlsx",
+    "desligados": f"{INPUT_DIR}/DESLIGADOS.xlsx",
+}
+CALC_PATHS = {
+    "sindicatos": f"{INPUT_DIR}/Base sindicato x valor.xlsx",
+    "dias_uteis": f"{INPUT_DIR}/Base dias uteis.xlsx",
+}
+
+TEMPLATE_OUTPUT_PATH = f"{INPUT_DIR}/VR MENSAL 05.2025.xlsx"
+
 
 # Caminho para o arquivo de saída
 OUTPUT_DIR = "data/output"

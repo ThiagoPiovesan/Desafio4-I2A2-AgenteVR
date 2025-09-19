@@ -1,96 +1,85 @@
-# Desafio 4 - Automação de Cálculo de Vale Refeição (VR)
+# Desafio 4: Agentes Autônomos para Cálculo de Vale Refeição (VR)
 
 ## Visão Geral
 
-Este projeto automatiza o processo de cálculo do benefício de Vale Refeição (VR) para os colaboradores de uma empresa. Ele consolida dados de diversas fontes (planilhas Excel), aplica um conjunto complexo de regras de negócio e gera um relatório final pronto para ser enviado à operadora do benefício.
+Este projeto utiliza agentes de IA para automatizar o complexo processo de cálculo do benefício de Vale Refeição (VR) para os colaboradores de uma empresa. A solução consolida dados de múltiplas planilhas, aplica um conjunto de regras de negócio e gera um relatório final unificado.
 
-O núcleo do projeto utiliza um agente de IA (através da biblioteca LangChain e da API do Google Gemini) para interpretar as regras de negócio e executar os cálculos de forma autônoma, demonstrando uma abordagem moderna para resolver problemas de lógica de negócio complexa.
+O núcleo do projeto é baseado em agentes autônomos que utilizam a API do Google Gemini para interpretar as regras de negócio e executar os cálculos necessários, demonstrando uma abordagem moderna para resolver desafios de lógica de negócio.
 
-## Fluxo do Processo
+## Arquitetura dos Agentes
 
-O sistema segue um pipeline de dados bem definido:
+O sistema é orquestrado pelo `main.py` e opera com dois agentes principais:
 
-1.  **Carregamento de Dados (`data_loader.py`):** O processo inicia carregando múltiplas planilhas Excel a partir do diretório `data/input/`. Cada planilha representa uma faceta dos dados dos colaboradores (ativos, admissões, férias, desligamentos, etc.). Os nomes das colunas são padronizados nesta etapa.
+1.  **Agente de Dados (`src/agente_dados.py`):**
+    *   **Responsabilidade:** Localizar, carregar e consolidar as diversas planilhas de dados (colaboradores ativos, admissões, férias, etc.) localizadas em `data/input/`.
+    *   **Ferramentas (`src/agente_dados.py`):** Utiliza um conjunto de ferramentas para ler e processar os arquivos, unificando-os em um único DataFrame para a próxima etapa.
+    *   **Prompt (`utils/prompt_agente_dados.txt`):** Segue instruções específicas para realizar a carga e o pré-processamento dos dados.
 
-2.  **Processamento e Limpeza (`data_processor.py`):**
-    *   **Consolidação:** As bases de colaboradores `ativos` e `admissões` são unificadas.
-    *   **Aplicação de Exclusões:** Colaboradores que não são elegíveis ao benefício são removidos da base principal. Isso inclui estagiários, aprendizes, diretores, funcionários em afastamento ou alocados no exterior.
-
-3.  **Motor de Cálculo (`calculation_engine.py`):**
-    *   Este é o componente central que orquestra a lógica de negócio.
-    *   Um **agente de IA** é inicializado com acesso a um ambiente Python (REPL) e aos dados já processados.
-    *   O agente recebe um prompt detalhado (`llm_prompt.txt`) contendo todas as regras de negócio, como:
-        *   Cálculo de dias úteis com base no sindicato.
-        *   Desconto de dias de férias.
-        *   Regras de pagamento proporcional para recém-admitidos.
-        *   Regras de corte ou pagamento proporcional para desligados.
-        *   Cálculo do valor total do benefício com base no estado (UF) do sindicato.
-    *   O agente executa o código Python passo a passo para aplicar essas regras e produz um DataFrame final com os resultados.
+2.  **Agente de Cálculo (`src/agente_calculo.py`):**
+    *   **Responsabilidade:** Aplicar as regras de negócio complexas sobre os dados consolidados.
+    *   **Lógica:** Interpreta as regras detalhadas no prompt principal para realizar cálculos de dias úteis, descontos de férias, proporcionalidade para admissões e desligamentos, e o valor final do benefício com base na localidade (UF).
+    *   **Prompt (`utils/llm_prompt.txt`):** Contém o detalhamento completo de todas as regras de negócio que o agente deve seguir para executar os cálculos corretamente.
 
 ## Estrutura do Projeto
 
 ```
 .
 ├── data/
-│   ├── input/         # Contém as planilhas de dados de entrada
-│   └── output/        # Onde o relatório final é salvo
+│   ├── input/                     # Contém as planilhas de dados de entrada
+│   └── output/                    # Onde o relatório final (VR MENSAL 05.2025.csv) é salvo
 ├── src/
-│   ├── __init__.py
-│   ├── config.py      # Configurações de caminhos e regras de negócio
-│   ├── data_loader.py # Módulo para carregar e limpar dados
-│   ├── data_processor.py # Módulo para consolidar e filtrar dados
-│   └── calculation_engine.py # Orquestra o agente de IA para os cálculos
-├── .env               # Arquivo para armazenar a GOOGLE_API_KEY (não versionado)
-├── .gitignore
-├── llm_prompt.txt     # O prompt com as instruções para o agente de IA
-├── main.py            # Ponto de entrada da aplicação
-├── pyproject.toml     # Definições do projeto e dependências
-└── README.md          # Este arquivo
+│   ├── agente_calculo.py          # Agente que executa as regras de negócio e os cálculos
+│   ├── agente_dados.py            # Agente responsável por carregar e preparar os dados
+│   └── config.py                  # Configurações gerais e caminhos
+├── utils/
+│   ├── llm_prompt.txt             # Prompt com as regras de negócio para o agente de cálculo
+│   └── prompt_agente_dados.txt    # Prompt de instruções para o agente de dados
+├── .env                           # Arquivo para armazenar a GOOGLE_API_KEY (não versionado)
+├── main.py                        # Ponto de entrada que orquestra os agentes
+├── pyproject.toml                 # Definições do projeto e dependências
+└── README.md                      # Este arquivo
 ```
 
 ## Como Configurar e Executar
 
 ### Pré-requisitos
 
-*   Python 3.13 ou superior
-*   Poetry (para gerenciamento de dependências)
+*   Python 3.9+
+*   Poetry (ou outro gerenciador de ambientes como UV)
 
 ### Passos
 
 1.  **Clonar o Repositório:**
     ```bash
     git clone <url-do-repositorio>
-    cd <nome-do-repositorio>
+    cd Desafio4
     ```
 
 2.  **Instalar Dependências:**
-    Use o Poetry ou UV para criar um ambiente virtual e instalar as bibliotecas listadas no `pyproject.toml`.
+    Use o Poetry para criar um ambiente virtual e instalar as bibliotecas necessárias.
     ```bash
     poetry install
-    uv sync
     ```
 
 3.  **Configurar a Chave de API:**
     *   Crie um arquivo chamado `.env` na raiz do projeto.
-    *   Dentro deste arquivo, adicione sua chave da API do Google Gemini:
+    *   Adicione sua chave da API do Google Gemini neste arquivo:
         ```
-        GOOGLE_API_KEY="SUA_CHAVE_DE_API_AQUI" ou OPENAI
+        GOOGLE_API_KEY="SUA_CHAVE_DE_API_AQUI"
         ```
 
 4.  **Adicionar os Dados de Entrada:**
-    *   Certifique-se de que todas as planilhas Excel necessárias estejam presentes no diretório `data/input/`.
+    *   Coloque todas as planilhas Excel necessárias no diretório `data/input/`.
 
 5.  **Executar o Projeto:**
-    Execute o script principal para iniciar todo o processo.
+    Ative o ambiente virtual e execute o script principal.
     ```bash
     poetry run python main.py
-    uv run main.py
     ```
-    Ou, ativando o ambiente virtual primeiro:
+    Como alternativa:
     ```bash
     poetry shell
-    uv venv
     python main.py
     ```
 
-O processo pode levar alguns minutos, pois envolve chamadas de API para o modelo de linguagem. Ao final, o relatório `VR_compra_calculado.xlsx` será gerado no diretório `data/output/`.
+O processo pode levar alguns minutos para ser concluído. Ao final, o relatório `VR MENSAL 05.2025.csv` será gerado no diretório `data/output/`.
